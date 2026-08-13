@@ -8,31 +8,27 @@
 #    config-level patch is the deployment escape hatch. The port still follows
 #    `dsh web --port` when given.
 #
-# 2. web-runtime: feed the /api browser-trust fence the CURRENT IPv4 LAN
-#    addresses, recomputed from the machine's network interfaces each time the
-#    composition (re)loads — no stale boot-time snapshot, no hard-coded IPs.
-#    Extra authorities can be added via the environment variable
-#    DSH_PHONE_CONTROL_TRUSTED="host1,host2" (comma separated).
+# 2. insert: the host plugin, which does two things:
+#    a. injects a crypto.randomUUID polyfill into the served index.html
+#       (browsers only expose Crypto.randomUUID() in secure contexts; a
+#       plain-HTTP LAN origin is NOT one, so without the polyfill every RPC
+#       crashes and the session list stays empty);
+#    b. watches the machine's network interfaces and, when the LAN IP changes,
+#       rewrites a managed `connection` override in the profile's own
+#       cordis.patch.yml — the user patch layer hot-reloads, so the /api
+#       trust fence follows the new IP within seconds (no restart, no manual
+#       edits).
 #
-# 3. insert: the host plugin that injects a crypto.randomUUID polyfill into
-#    the served index.html. Browsers only expose Crypto.randomUUID() in secure
-#    contexts; a plain-HTTP LAN origin (http://192.168.x.x:PORT) is NOT one,
-#    so without this polyfill every RPC call crashes with
-#    "crypto.randomUUID is not a function" and the session list stays empty.
+# No installed files are modified; only official mechanisms are used: the
+# bundle patch layer, the index-tap hook, and the user patch layer.
 
 - id: webserver
   config:
     host: 0.0.0.0
     port: !!js ctx.webStartup.port ?? 3080
 
-- id: web-runtime
-  config:
-    printUrl: true
-    surfaceContext: true
-    trustedHosts: !!js Object.values(process.getBuiltinModule('node:os').networkInterfaces()).flat().filter(function (i) { return i && i.family === 'IPv4' && !i.internal; }).map(function (i) { return i.address; }).concat((process.env.DSH_PHONE_CONTROL_TRUSTED || '').split(',').filter(Boolean))
-
 - insert:
-    - id: lan-crypto-polyfill
+    - id: lan-phone-control
       name: 'dsh-phone-control'
       inject: [webServer]
       config: {}

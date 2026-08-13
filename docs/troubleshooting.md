@@ -1,4 +1,6 @@
-# Troubleshooting / 排障经验：局域网手机访问 DSH 失败的全过程
+# 排障经验：局域网手机访问 DSH 失败的全过程
+
+> [English version](troubleshooting.en.md)
 
 > 本文记录了一次真实排障的完整经过（信息已脱敏）：手机与电脑在同一局域网，但手机打开 `http://127.0.0.1:3080` 无效，改成电脑局域网 IP 后页面能开、会话列表却一直是空的。最终定位到 **4 个叠加的根因**，其中一个是 DSH 前端自身的 bug。这份经验沉淀成了本插件。
 
@@ -30,8 +32,8 @@ DSH 的 `/api` 有一个"浏览器信任围栏"（防 DNS 重绑定）：只接�
 ```
 # 换网前
 curl -H "Host: 192.168.0.x:3080" http://127.0.0.1:3080/api/events.mux  → 426（通过）
-# 换网后（IP 变成 192.168.62.y）
-curl -H "Host: 192.168.62.y:3080" http://127.0.0.1:3080/api/events.mux  → 403（拒绝）
+# 换网后（IP 变成 10.39.215.y）
+curl -H "Host: 10.39.215.y:3080" http://127.0.0.1:3080/api/events.mux  → 403（拒绝）
 ```
 
 **静态页面不受围栏限制**（所以"页面能打开"），但所有 API 调用被拒 → 会话列表空。
@@ -75,8 +77,14 @@ typeof crypto.getRandomValues // 两种环境都是 "function"  ← 修复抓手
 
 ## 附加干扰项：网络抖动与超大历史
 
-- 排障期间电脑的 WiFi IP 在两个网段间反复横跳（DHCP/换网），导致"时好时坏"的假象。**换网络后必须重新确认 IP，并让信任列表重算（重启 dsh web 或热重载补丁）。**
+- 排障期间电脑的 WiFi IP 在多个网段间反复横跳（DHCP/换网），导致"时好时坏"的假象。**换网络后必须重新确认 IP，并让信任列表重算。**
 - 会话历史是单次下载的大 JSON（本例约 10 MB），弱网下 `session.history` 超时表现为"聊天记录加载不出来"，与本次 bug 无关，换稳定网络即可。
+
+## 本插件的解法（v0.2）
+
+1. 补丁绑定 `0.0.0.0`；
+2. **网卡监视器**：每 5 秒检查网卡，IP 变化时自动把当前 IP 写入 profile 用户补丁的受管 `connection` 覆盖 → 用户层热重载 → 围栏几秒内跟上新地址，**不再需要手动改 IP 或重启**；
+3. **crypto polyfill**：通过 index 变换注入 `getRandomValues` 版 UUID v4。
 
 ## 诊断工具箱（速查）
 
@@ -89,7 +97,7 @@ typeof crypto.getRandomValues // 两种环境都是 "function"  ← 修复抓手
 | WS 主动关闭 | 钩住 `WebSocket.prototype.close` 看调用栈（区分应用自断 vs 网络断）|
 | 被吞的错误 | 钩住 `Promise.all`（`p.catch(e => log(e.stack))`）抓被 catch 静默吞掉的异常 |
 
-## 给 DSH 上游的建议（如果看到这里）
+## 给 DSH 上游的建议
 
 - `mintRpcId()` 应优先 `crypto.randomUUID`、回退 `crypto.getRandomValues` 手写 UUID，避免在非安全上下文（局域网明文 HTTP）崩溃；
 - `host.describe` 等握手调用应容忍非安全上下文；

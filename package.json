@@ -1,6 +1,6 @@
 {
   "name": "dsh-phone-control",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DSH bundle: control the DeepSeek Harness web GUI from a phone/tablet on the same LAN",
   "type": "module",
   "main": "lib/index.js",
