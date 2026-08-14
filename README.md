@@ -70,3 +70,15 @@ netsh advfirewall firewall add rule name="dsh-web-3080" dir=in action=allow prot
 ## 许可证
 
 MIT
+
+## 📱 手机 dsh-android App（关联生态）
+
+除了手机浏览器访问 DSH 网页，还有定制的 `dsh-android` 原生 App（解锁屏幕展示、适配应用内）：
+
+- **全功能会话**：发送消息给 Agent、实时流式接收回复、思考块/工具行/复制按钮
+- **会话同步**：与 Web 工作区一致——只显示可见会话、隐藏已归档/空白会话
+- **体验细节**：长按删除、下拉刷新、打开即定位最新、深色模式、一键诊断
+- **插件协作**：本插件会在 DSH 网页右下角显示「📱 dsh App 连接」横幅，展示当前连接地址；`/api/phone-guide` 返回 JSON（IP/端口/URL）；`/phone` 提供手机引导页
+
+**手机引导页**：在同一网络的手机浏览器打开 `http://<电脑IP>:3080/phone` 即可看到连接地址。
+**App 预置 APK**：见 **Releases** 中的 `dsh-android-*.apk`。

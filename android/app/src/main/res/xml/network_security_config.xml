@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext HTTP is required because DSH is served over plain HTTP on the LAN
+  (http://<PC_LAN_IP>:3080). The security model is LAN trust (same as the
+  dsh-phone-control plugin): only enable this app on networks you trust.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

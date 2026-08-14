@@ -1,33 +1,33 @@
-{
-  "name": "dsh-phone-control",
-  "version": "0.2.0",
-  "description": "DSH bundle: control the DeepSeek Harness web GUI from a phone/tablet on the same LAN",
-  "type": "module",
-  "main": "lib/index.js",
-  "files": [
-    "lib",
-    "cordis.patch.yml",
-    "docs",
-    "README.md",
-    "LICENSE"
-  ],
-  "keywords": [
-    "dsh",
-    "deepseek-harness",
-    "plugin",
-    "bundle",
-    "lan",
-    "remote",
-    "phone"
-  ],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/flupke91/dsh-phone-control.git"
-  },
-  "dsh": {
-    "bundle": {
-      "patch": "./cordis.patch.yml"
-    }
-  }
+﻿{
+    "name":  "dsh-phone-control",
+    "version":  "0.3.0",
+    "description":  "dsh-phone-control: LAN phone access + dsh-android app companion (crypto polyfill, IP auto-follow trust fence, connection guide)",
+    "type":  "module",
+    "main":  "lib/index.js",
+    "files":  [
+                  "lib",
+                  "cordis.patch.yml",
+                  "docs",
+                  "README.md",
+                  "LICENSE"
+              ],
+    "keywords":  [
+                     "dsh",
+                     "deepseek-harness",
+                     "plugin",
+                     "bundle",
+                     "lan",
+                     "remote",
+                     "phone"
+                 ],
+    "license":  "MIT",
+    "repository":  {
+                       "type":  "git",
+                       "url":  "git+https://github.com/flupke91/dsh-phone-control.git"
+                   },
+    "dsh":  {
+                "bundle":  {
+                               "patch":  "./cordis.patch.yml"
+                           }
+            }
 }
