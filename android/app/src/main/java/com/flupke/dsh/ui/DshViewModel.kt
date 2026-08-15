@@ -3,12 +3,14 @@ package com.flupke.dsh.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flupke.dsh.core.ConnectionManager
+import com.flupke.dsh.core.NotificationHelper
 import com.flupke.dsh.data.ChatMessage
 import com.flupke.dsh.data.JobView
 import com.flupke.dsh.data.ModelGroup
 import com.flupke.dsh.data.PluginEntry
 import com.flupke.dsh.data.SessionSummary
 import com.flupke.dsh.data.ToolCallView
+import com.flupke.dsh.data.title
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +25,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
-class DshViewModel : ViewModel() {
+class DshViewModel(private val app: android.app.Application) : androidx.lifecycle.AndroidViewModel(app) {
 
     private companion object {
         const val TAG = "dsh-app"
@@ -347,6 +349,7 @@ class DshViewModel : ViewModel() {
             val payload = frame["payload"]?.jsonObject
             val sid = payload?.get("sessionId")?.jsonPrimitive?.content
             if (sid != null && sid == _currentSessionId.value) {
+                val prev = _jobs.value
                 _jobs.value = (payload["jobs"]?.jsonArray ?: emptyList()).mapNotNull { j ->
                     val o = j.jsonObject
                     val id = o["id"]?.jsonPrimitive?.content ?: return@mapNotNull null
@@ -360,6 +363,23 @@ class DshViewModel : ViewModel() {
                         finishedAt = o["finishedAt"]?.jsonPrimitive?.longOrNull,
                     )
                 }
+                // 任务完成提醒：running → completed/failed/killed 的转变
+                val finishedNow = _jobs.value.filter { it.status in setOf("completed", "failed", "killed") }
+                finishedNow.forEach { job ->
+                    val wasRunning = prev.none { it.id == job.id && it.status == job.status }
+                    if (wasRunning) {
+                        val icon = when (job.status) {
+                            "completed" -> "✅"
+                            "failed" -> "❌"
+                            else -> "✕"
+                        }
+                        NotificationHelper.notifyTaskDone(
+                            app,
+                            "$icon 任务${if (job.status == "completed") "完成" else "结束"}",
+                            "${job.label.take(50)}（${job.status}）",
+                        )
+                    }
+                }
             }
             return
         }
@@ -372,6 +392,11 @@ class DshViewModel : ViewModel() {
             if (sid != null && sid == _currentSessionId.value) {
                 val ev = payload["event"]?.jsonObject
                 if (ev != null) appendLiveEvent(ev)
+                // 任务完成提醒：Agent 回合结束（turn/end）
+                if (evType == "turn/end") {
+                    val title = _sessions.value.find { it.sessionId == sid }?.title() ?: "会话"
+                    NotificationHelper.notifyTaskDone(app, "✅ 任务完成", "「$title」的 Agent 已结束处理")
+                }
             }
         }
         // 会话列表防抖刷新
